@@ -1,0 +1,112 @@
+package handler
+
+import (
+	"context"
+	"log"
+	"time"
+
+	"{{.AppName}}/common/kitexGen/{{.ProtoImportPath}}"
+	"{{.AppName}}/{{.SrvDirName}}/internal/repository"
+	"{{.AppName}}/{{.SrvDirName}}/internal/service"
+)
+
+type {{.UpperModule}}Handler struct {
+	svc  *service.{{.UpperModule}}Service
+	repo *repository.{{.UpperModule}}Repo
+}
+
+func New{{.UpperModule}}Handler(repo *repository.{{.UpperModule}}Repo) *{{.UpperModule}}Handler {
+	log.Printf("{{.UpperModule}}Handler initializing")
+	return &{{.UpperModule}}Handler{
+		svc:  service.New{{.UpperModule}}Service(repo),
+		repo: repo,
+	}
+}
+
+func (h *{{.UpperModule}}Handler) Create(ctx context.Context, req *{{.Module}}.Create{{.UpperModule}}Req) (*{{.Module}}.Create{{.UpperModule}}Resp, error) {
+	start := time.Now()
+	log.Printf("handle create {{.LowerModule}}: %+v", req)
+
+	resp, err := h.svc.Create(ctx, req)
+	if err != nil {
+		log.Printf("create {{.LowerModule}} failed: %v", err)
+		return nil, err
+	}
+
+	log.Printf("create {{.LowerModule}} success: id=%d, duration=%s", resp.Id, time.Since(start))
+	return resp, nil
+}
+
+func (h *{{.UpperModule}}Handler) Get(ctx context.Context, req *{{.Module}}.Get{{.UpperModule}}Req) (*{{.Module}}.Get{{.UpperModule}}Resp, error) {
+	start := time.Now()
+	id := req.Id
+	log.Printf("handle get {{.LowerModule}}: id=%d", id)
+
+	resp, err := h.svc.Get(ctx, req)
+	if err != nil {
+		log.Printf("get {{.LowerModule}} failed: id=%d, error=%v", id, err)
+		return nil, err
+	}
+
+	log.Printf("get {{.LowerModule}} success: id=%d, duration=%s", id, time.Since(start))
+	return resp, nil
+}
+
+func (h *{{.UpperModule}}Handler) List(ctx context.Context, req *{{.Module}}.List{{.UpperModule}}Req) (*{{.Module}}.List{{.UpperModule}}Resp, error) {
+	start := time.Now()
+	log.Printf("handle list {{.LowerModule}}")
+
+	resp, err := h.svc.List(ctx, req)
+	if err != nil {
+		log.Printf("list {{.LowerModule}} failed: %v", err)
+		return nil, err
+	}
+
+	log.Printf("list {{.LowerModule}} success: count=%d, duration=%s", len(resp.Items), time.Since(start))
+	return resp, nil
+}
+
+func (h *{{.UpperModule}}Handler) Update(ctx context.Context, req *{{.Module}}.Update{{.UpperModule}}Req) (*{{.Module}}.Update{{.UpperModule}}Resp, error) {
+	start := time.Now()
+	id := req.Id
+	log.Printf("handle update {{.LowerModule}}: id=%d", id)
+
+	resp, err := h.svc.Update(ctx, req)
+	if err != nil {
+		log.Printf("update {{.LowerModule}} failed: id=%d, error=%v", id, err)
+		return nil, err
+	}
+
+	log.Printf("update {{.LowerModule}} success: id=%d, duration=%s", id, time.Since(start))
+	return resp, nil
+}
+
+func (h *{{.UpperModule}}Handler) Delete(ctx context.Context, req *{{.Module}}.Delete{{.UpperModule}}Req) (*{{.Module}}.Delete{{.UpperModule}}Resp, error) {
+	start := time.Now()
+	id := req.Id
+	log.Printf("handle delete {{.LowerModule}}: id=%d", id)
+
+	resp, err := h.svc.Delete(ctx, req)
+	if err != nil {
+		log.Printf("delete {{.LowerModule}} failed: id=%d, error=%v", id, err)
+		return nil, err
+	}
+
+	log.Printf("delete {{.LowerModule}} success: id=%d, duration=%s", id, time.Since(start))
+	return resp, nil
+}
+
+{{if .HasJoin}}
+func (h *{{.UpperModule}}Handler) {{.JoinHandlerMethodName}}(ctx context.Context, req *{{.Module}}.{{.JoinReqType}}) (*{{.Module}}.{{.JoinRespType}}, error) {
+	start := time.Now()
+	resp := &{{.Module}}.{{.JoinRespType}}{}
+	m, err := h.svc.{{.JoinServiceMethodName}}(ctx, int64(req.Id))
+	if err != nil {
+		log.Printf("get join failed: id=%d, error=%v", req.Id, err)
+		return nil, err
+	}
+	// copier.Copy(resp, m) // removed: copier not available
+	log.Printf("get join success: id=%d, duration=%s", req.Id, time.Since(start))
+	return resp, nil
+}
+{{end}}

@@ -1,0 +1,19 @@
+package model
+{{- if or .HasCreatedAt .HasUpdatedAt}}
+
+import "time"
+{{- end }}
+
+type {{.UpperModule}} struct {
+	Id        uint      `gorm:"primaryKey" json:"id"`
+	Name      string    `gorm:"size:255" json:"name"`
+	Status    int       `gorm:"default:0" json:"status"`
+{{- if .HasCreatedAt}}
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
+{{- end}}
+{{- if .HasUpdatedAt}}
+	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+{{- end}}
+}
+
+func ({{.UpperModule}}) TableName() string { return "{{.TableName}}" }

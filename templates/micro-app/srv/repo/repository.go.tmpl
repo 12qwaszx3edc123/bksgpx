@@ -1,0 +1,127 @@
+package repository
+
+import (
+	"context"
+	"log"
+	"time"
+
+	"{{.AppName}}/pkg/database"
+	"{{.AppName}}/{{.SrvDirName}}/internal/model"
+	"gorm.io/gorm"
+)
+
+type {{.UpperModule}}Repo struct { db *gorm.DB }
+
+func New{{.UpperModule}}Repo(db *gorm.DB) *{{.UpperModule}}Repo {
+	if db == nil {
+		db, _ = database.NewDB(nil)
+	}
+	log.Printf("{{.UpperModule}}Repo initialized")
+	return &{{.UpperModule}}Repo{db: db}
+}
+
+func (r *{{.UpperModule}}Repo) Create(ctx context.Context, m *model.{{.UpperModule}}) error {
+	start := time.Now()
+	log.Printf("create {{.LowerModule}}: %+v", m)
+
+	err := r.db.WithContext(ctx).Create(m).Error
+	if err != nil {
+		log.Printf("create {{.LowerModule}} failed: %v", err)
+		return err
+	}
+
+	log.Printf("create {{.LowerModule}} success: id=%d, duration=%s", m.Id, time.Since(start))
+	return nil
+}
+
+func (r *{{.UpperModule}}Repo) GetByID(ctx context.Context, id uint) (*model.{{.UpperModule}}, error) {
+	start := time.Now()
+	log.Printf("get {{.LowerModule}} by id: %d", id)
+
+	var m model.{{.UpperModule}}
+{{- if .HasSoftDelete}}
+	if err := r.db.WithContext(ctx).Where("id = ? AND {{.SoftDeleteCol}} = 0", id).First(&m).Error; err != nil {
+{{- else}}
+	if err := r.db.WithContext(ctx).First(&m, id).Error; err != nil {
+{{- end}}
+		log.Printf("get {{.LowerModule}} failed: id=%d, error=%v", id, err)
+		return nil, err
+	}
+
+	log.Printf("get {{.LowerModule}} success: id=%d, duration=%s", id, time.Since(start))
+	return &m, nil
+}
+
+func (r *{{.UpperModule}}Repo) List(ctx context.Context) ([]*model.{{.UpperModule}}, error) {
+	start := time.Now()
+	log.Printf("list {{.LowerModule}}")
+
+	var list []*model.{{.UpperModule}}
+{{- if .HasSoftDelete}}
+	err := r.db.WithContext(ctx).Where("{{.SoftDeleteCol}} = 0").Find(&list).Error
+{{- else}}
+	err := r.db.WithContext(ctx).Find(&list).Error
+{{- end}}
+	if err != nil {
+		log.Printf("list {{.LowerModule}} failed: %v", err)
+		return nil, err
+	}
+
+	log.Printf("list {{.LowerModule}} success: count=%d, duration=%s", len(list), time.Since(start))
+	return list, nil
+}
+
+func (r *{{.UpperModule}}Repo) Update(ctx context.Context, m *model.{{.UpperModule}}) error {
+	start := time.Now()
+	log.Printf("update {{.LowerModule}}: id=%d", m.Id)
+
+	err := r.db.WithContext(ctx).Save(m).Error
+	if err != nil {
+		log.Printf("update {{.LowerModule}} failed: id=%d, error=%v", m.Id, err)
+		return err
+	}
+
+	log.Printf("update {{.LowerModule}} success: id=%d, duration=%s", m.Id, time.Since(start))
+	return nil
+}
+
+func (r *{{.UpperModule}}Repo) Delete(ctx context.Context, id uint) error {
+	start := time.Now()
+	log.Printf("delete {{.LowerModule}}: id=%d", id)
+
+{{- if .HasSoftDelete}}
+	err := r.db.WithContext(ctx).Model(&model.{{.UpperModule}}{}).Where("id = ?", id).Update("{{.SoftDeleteCol}}", 1).Error
+{{- else}}
+	err := r.db.WithContext(ctx).Delete(&model.{{.UpperModule}}{}, id).Error
+{{- end}}
+	if err != nil {
+		log.Printf("delete {{.LowerModule}} failed: id=%d, error=%v", id, err)
+		return err
+	}
+
+	log.Printf("delete {{.LowerModule}} success: id=%d, duration=%s", id, time.Since(start))
+	return nil
+}
+
+{{if .HasJoin}}
+// {{.JoinMethodName}} executes a {{.JoinType}} JOIN query and returns a single result.
+func (r *{{.UpperModule}}Repo) {{.JoinMethodName}}(ctx context.Context, id int64) (*model.{{.JoinModelName}}, error) {
+	start := time.Now()
+	log.Printf("join {{.LowerModule}}: id=%d", id)
+
+	var result model.{{.JoinModelName}}
+	err := r.db.WithContext(ctx).
+		Table("`{{.LeftTable}}` AS {{.LeftAlias}}").
+		Select("{{.SelectColumns}}").
+		Joins("{{.JoinType}} JOIN `{{.RightTable}}` AS {{.RightAlias}} ON {{.RightAlias}}.`{{.RightJoinField}}` = {{.LeftAlias}}.`{{.LeftJoinField}}`").
+		Where("{{.LeftAlias}}.`id` = ?", id).
+		Scan(&result).Error
+	if err != nil {
+		log.Printf("join {{.LowerModule}} failed: id=%d, error=%v", id, err)
+		return nil, err
+	}
+
+	log.Printf("join {{.LowerModule}} success: id=%d, duration=%s", id, time.Since(start))
+	return &result, nil
+}
+{{end}}
