@@ -7,7 +7,9 @@ import (
 
 type {{.Module.UpperName}} struct {
 	gorm.Model
-	// TODO: Add your fields here
+{{range .Module.Fields}}
+	{{.GoName}} {{.GoType}}
+{{end}}
 }
 
 func (m *{{.Module.UpperName}}) {{.Module.UpperName}}Create(db *gorm.DB) error {

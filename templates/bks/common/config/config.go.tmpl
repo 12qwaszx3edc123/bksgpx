@@ -35,8 +35,8 @@ type Config struct {
 		APP_KEY string
 	}
 	Services struct {
-		{{- range .Modules}}
+{{range .Modules}}
 		{{.UpperName}}Addr string
-		{{- end}}
+{{end}}
 	}
 }

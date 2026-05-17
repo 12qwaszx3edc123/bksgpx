@@ -16,7 +16,9 @@ func {{.Module.UpperName}}Add(c *gin.Context) {
 		return
 	}
 	add, err := config.{{.Module.UpperName}}Client.{{.Module.UpperName}}Add(c, &pb{{.Module.UpperName}}.{{.Module.UpperName}}AddReq{
-		// TODO: Map form fields to proto fields
+{{range .Module.Fields}}
+		{{.GoName}}: form.{{.GoName}},
+{{end}}
 	})
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "添加失败", "code": 400, "data": nil})
@@ -47,7 +49,9 @@ func {{.Module.UpperName}}Upt(c *gin.Context) {
 	}
 	upt, err := config.{{.Module.UpperName}}Client.{{.Module.UpperName}}Upt(c, &pb{{.Module.UpperName}}.{{.Module.UpperName}}UptReq{
 		Id: form.Id,
-		// TODO: Map form fields to proto fields
+{{range .Module.Fields}}
+		{{.GoName}}: form.{{.GoName}},
+{{end}}
 	})
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "修改失败", "code": 400, "data": nil})

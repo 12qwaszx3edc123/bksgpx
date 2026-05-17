@@ -11,12 +11,12 @@ func Router(r *gin.Engine) {
 	group := r.Group("/v1")
 	group.Use(middlewares.MiddleWares())
 	{
-		{{- range .Modules}}
+{{range .Modules}}
 		group.POST("/{{.LowerName}}/add", api.{{.UpperName}}Add)
 		group.GET("/{{.LowerName}}/show", api.{{.UpperName}}Show)
 		group.POST("/{{.LowerName}}/upt", api.{{.UpperName}}Upt)
 		group.GET("/{{.LowerName}}/list", api.{{.UpperName}}List)
 		group.GET("/{{.LowerName}}/del", api.{{.UpperName}}Del)
-		{{- end}}
+{{end}}
 	}
 }

@@ -1,14 +1,18 @@
 package request
 
 type {{.Module.UpperName}}Add struct {
-	// TODO: Add your fields here
+{{range .Module.Fields}}
+	{{.GoName}} {{.GoType}} `form:"{{.ColumnName}}" json:"{{.ColumnName}}"`
+{{end}}
 }
 type {{.Module.UpperName}}Show struct {
 	Id int64 `form:"id" json:"id" xml:"id" binding:"required"`
 }
 type {{.Module.UpperName}}Upt struct {
 	Id int64 `form:"id" json:"id" xml:"id" binding:"required"`
-	// TODO: Add your fields here
+{{range .Module.Fields}}
+	{{.GoName}} {{.GoType}} `form:"{{.ColumnName}}" json:"{{.ColumnName}}"`
+{{end}}
 }
 type {{.Module.UpperName}}List struct {
 	Page int64 `form:"page" json:"page" xml:"page" binding:"required"`

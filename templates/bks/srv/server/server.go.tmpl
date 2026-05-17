@@ -15,7 +15,9 @@ type {{.Module.UpperName}}Service struct {
 
 func (s *{{.Module.UpperName}}Service) {{.Module.UpperName}}Add(ctx context.Context, req *pb{{.Module.UpperName}}.{{.Module.UpperName}}AddReq) (resp *pb{{.Module.UpperName}}.{{.Module.UpperName}}AddResp, err error) {
 	m := model.{{.Module.UpperName}}{
-		// TODO: Map proto fields to model fields
+{{range .Module.Fields}}
+		{{.GoName}}: req.{{.GoName}},
+{{end}}
 	}
 	if err := m.{{.Module.UpperName}}Create(config.DB); err != nil {
 		return nil, errors.New("添加失败")
@@ -29,7 +31,10 @@ func (s *{{.Module.UpperName}}Service) {{.Module.UpperName}}Show(ctx context.Con
 		return nil, errors.New("查询失败")
 	}
 	return &pb{{.Module.UpperName}}.{{.Module.UpperName}}ShowResp{
-		// TODO: Map model fields to proto fields
+		Id: int64(m.ID),
+{{range .Module.Fields}}
+		{{.GoName}}: m.{{.GoName}},
+{{end}}
 	}, nil
 }
 
@@ -39,7 +44,9 @@ func (s *{{.Module.UpperName}}Service) {{.Module.UpperName}}Upt(ctx context.Cont
 		return nil, errors.New("记录不存在")
 	}
 	m = model.{{.Module.UpperName}}{
-		// TODO: Map proto fields to model fields
+{{range .Module.Fields}}
+		{{.GoName}}: req.{{.GoName}},
+{{end}}
 	}
 	if err := m.{{.Module.UpperName}}Upt(config.DB, req); err != nil {
 		return nil, errors.New("修改失败")
@@ -57,7 +64,9 @@ func (s *{{.Module.UpperName}}Service) {{.Module.UpperName}}List(ctx context.Con
 	for _, m := range list {
 		item := pb{{.Module.UpperName}}.{{.Module.UpperName}}List{
 			Id: int64(m.ID),
-			// TODO: Map model fields to proto fields
+{{range .Module.Fields}}
+			{{.GoName}}: m.{{.GoName}},
+{{end}}
 		}
 		lists = append(lists, &item)
 	}

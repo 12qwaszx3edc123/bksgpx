@@ -2,17 +2,17 @@ package init
 
 import (
 	"fmt"
-	"{{.AppName}}/common/config"
-	{{- range .Modules}}
-	pb{{.UpperName}} "{{.AppName}}/proto/{{.LowerName}}"
-	{{- end}}
-	"{{.AppName}}/common/model"
+	"{{$.AppName}}/common/config"
+	"{{$.AppName}}/common/model"
 	"github.com/olivere/elastic/v7"
 	"github.com/redis/go-redis/v9"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+{{range .Modules}}
+	pb{{.UpperName}} "{{$.AppName}}/proto/{{.LowerName}}"
+{{end}}
 )
 
 func init() {
@@ -20,9 +20,9 @@ func init() {
 	MysqlInit()
 	RedisInit()
 	EsInit()
-	{{- range .Modules}}
+{{range .Modules}}
 	{{.UpperName}}ClientInit()
-	{{- end}}
+{{end}}
 }
 
 func ViperInit() {
@@ -55,9 +55,9 @@ func MysqlInit() {
 		fmt.Println("数据库连接成功")
 	}
 	err = config.DB.AutoMigrate(
-		{{- range .Modules}}
+{{range .Modules}}
 		&model.{{.UpperName}}{},
-		{{- end}}
+{{end}}
 	)
 	if err != nil {
 		panic("数据库迁移失败")
@@ -90,8 +90,8 @@ func EsInit() {
 	}
 	fmt.Println("es连接成功")
 }
+{{range .Modules}}
 
-{{- range .Modules}}
 func {{.UpperName}}ClientInit() {
 	conn, err := grpc.Dial(config.Cfg.Services.{{.UpperName}}Addr, grpc.WithInsecure())
 	if err != nil {
@@ -99,4 +99,4 @@ func {{.UpperName}}ClientInit() {
 	}
 	config.{{.UpperName}}Client = pb{{.UpperName}}.New{{.UpperName}}Client(conn)
 }
-{{- end}}
+{{end}}

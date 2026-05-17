@@ -32,6 +32,6 @@ Jwt:
   APP_KEY: ""
 
 Services:
-{{- range .Modules}}
+{{range .Modules}}
   {{.UpperName}}Addr: "127.0.0.1:{{.Port}}"
-{{- end}}
+{{end}}

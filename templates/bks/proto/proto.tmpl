@@ -5,7 +5,9 @@ package {{.Module.LowerName}};
 option go_package = "./";
 
 message {{.Module.UpperName}}AddReq {
-  // TODO: Add your fields here
+{{range .Module.Fields}}
+  {{.ProtoType}} {{.ColumnName}} = {{.ProtoNum}};
+{{end}}
 }
 
 message {{.Module.UpperName}}AddResp {
@@ -17,12 +19,17 @@ message {{.Module.UpperName}}ShowReq {
 }
 
 message {{.Module.UpperName}}ShowResp {
-  // TODO: Add your fields here
+  int64 id = 1;
+{{range .Module.Fields}}
+  {{.ProtoType}} {{.ColumnName}} = {{add .ProtoNum 1}};
+{{end}}
 }
 
 message {{.Module.UpperName}}UptReq {
   int64 id = 1;
-  // TODO: Add your fields here
+{{range .Module.Fields}}
+  {{.ProtoType}} {{.ColumnName}} = {{add .ProtoNum 1}};
+{{end}}
 }
 
 message {{.Module.UpperName}}UptResp {
@@ -41,7 +48,9 @@ message {{.Module.UpperName}}ListResp {
 
 message {{.Module.UpperName}}List {
   int64 id = 1;
-  // TODO: Add your fields here
+{{range .Module.Fields}}
+  {{.ProtoType}} {{.ColumnName}} = {{add .ProtoNum 1}};
+{{end}}
 }
 
 message {{.Module.UpperName}}DelReq {
