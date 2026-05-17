@@ -1,4 +1,4 @@
-module github.com/12qwaszx3edc123/bksgpx/mygen
+module github.com/12qwaszx3edc123/bksgpx
 
 go 1.22
 
