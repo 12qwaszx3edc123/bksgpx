@@ -1,4 +1,4 @@
-module mygen
+module github.com/12qwaszx3edc123/bksgpx/mygen
 
 go 1.22
 
