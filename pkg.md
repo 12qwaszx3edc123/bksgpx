@@ -43,6 +43,12 @@ sortQuery := elastic.NewFieldSort("price")        // 按价格排序
 sortQuery.Desc()                                   // 倒序
 sortQuery.Asc()                                    // 正序
 
+// 设置高亮
+highlight := elastic.NewHighlight()
+highlight.Field("name")                          // 高亮哪个字段
+highlight.PreTags("<em>")                        // 前置标签
+highlight.PostTags("</em>")                      // 后置标签
+
 // 执行搜索
 do, err := config.Esc.Search().
     Index("commodity").    // 索引名称
@@ -50,6 +56,7 @@ do, err := config.Esc.Search().
     Size(size).            // 每页数量
     Query(boolQuery).      // 查询条件
     SortBy(sortQuery).     // 排序规则
+    Highlight(highlight).  // 添加高亮
     Do(context.Background())
 
 // 总条数
@@ -58,6 +65,9 @@ total := do.Hits.TotalHits
 // 结果解析
 for _, hit := range do.Hits.Hits {
     json.Unmarshal(hit.Source, list)  // 反序列化每条记录
+    if hit.Highlight != nil {
+        highlightedName := hit.Highlight["name"]  // ["<em>感冒</em>灵颗粒"]
+    }
 }
 ```
 
@@ -110,29 +120,7 @@ _, err = config.Esc.Delete().
 
 ---
 
-### ESHighlight //ES高亮搜索
 
-```go
-// 设置高亮
-highlight := elastic.NewHighlight()
-highlight.Field("name")                          // 高亮哪个字段
-highlight.PreTags("<em>")                        // 前置标签
-highlight.PostTags("</em>")                      // 后置标签
-
-// 执行搜索
-do, err := config.Esc.Search().
-    Index("commodity").              // 索引名称
-    Query(boolQuery).                // 查询条件
-    Highlight(highlight).            // 添加高亮
-    Do(context.Background())         // 执行
-
-// 获取高亮结果
-for _, hit := range do.Hits.Hits {
-    if hit.Highlight != nil {
-        highlightedName := hit.Highlight["name"]  // ["<em>感冒</em>灵颗粒"]
-    }
-}
-```
 
 ---
 
