@@ -4,16 +4,19 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"text/template"
 
+	"github.com/12qwaszx3edc123/bksgpx/templates"
 	_ "github.com/go-sql-driver/mysql"
 )
 
-const VERSION = "1.0.0"
+const VERSION = "1.0.1"
 
 type FieldInfo struct {
 	ColumnName string
@@ -40,6 +43,7 @@ type Config struct {
 	DBUser     string
 	DBPassword string
 	DBName     string
+	Template   string
 }
 
 type ProjectData struct {
@@ -69,6 +73,7 @@ func main() {
 	flag.StringVar(&cfg.DBUser, "db-user", "root", "database user")
 	flag.StringVar(&cfg.DBPassword, "db-password", "root", "database password")
 	flag.StringVar(&cfg.DBName, "db-name", "", "database name")
+	flag.StringVar(&cfg.Template, "template", "", "external template directory (default: embedded)")
 	flag.Parse()
 
 	if !filepath.IsAbs(cfg.Name) {
@@ -125,12 +130,26 @@ func main() {
 		DBName:     cfg.DBName,
 	}
 
+	// 初始化模板文件系统
+	var tFS fs.FS
+	if cfg.Template != "" {
+		// 使用外部模板目录
+		tFS = os.DirFS(cfg.Template)
+		fmt.Printf("使用外部模板: %s\n", cfg.Template)
+	} else {
+		// 使用内嵌模板
+		var err error
+		tFS, err = fs.Sub(templates.Bks, "bks")
+		if err != nil {
+			log.Fatalf("加载内嵌模板失败: %v", err)
+		}
+		fmt.Println("使用内嵌模板")
+	}
+
 	outputDir := cfg.Name
-	templateDir := "D:\\github\\templates\\bks"
 
 	fmt.Printf("mygen v%s\n", VERSION)
 	fmt.Printf("生成项目: %s\n", outputDir)
-	fmt.Printf("使用模板: %s\n", templateDir)
 	fmt.Printf("模块: %s\n", strings.Join(func() []string {
 		var names []string
 		for _, m := range moduleInfos {
@@ -139,7 +158,7 @@ func main() {
 		return names
 	}(), ", "))
 
-	generateProjectFiles(projectData, outputDir, templateDir)
+	generateProjectFiles(projectData, outputDir, tFS)
 
 	for _, mod := range moduleInfos {
 		moduleData := ModuleData{
@@ -147,7 +166,7 @@ func main() {
 			BffDirName: projectData.BffDirName,
 			Module:     mod,
 		}
-		generateModuleFiles(moduleData, outputDir, templateDir)
+		generateModuleFiles(moduleData, outputDir, tFS)
 	}
 
 	generateGoMod(projectData, outputDir)
@@ -222,91 +241,91 @@ func mysqlTypeToGo(mysqlType string) (string, string) {
 	}
 }
 
-func generateProjectFiles(data ProjectData, outputDir, templateDir string) {
-	processTemplate(
-		filepath.Join(templateDir, "common", "config", "config.yaml.tmpl"),
+func generateProjectFiles(data ProjectData, outputDir string, tFS fs.FS) {
+	processTemplate(tFS,
+		"common/config/config.yaml.tmpl",
 		filepath.Join(outputDir, "common", "config", "config.yaml"),
 		data,
 	)
-	processTemplate(
-		filepath.Join(templateDir, "common", "config", "config.go.tmpl"),
+	processTemplate(tFS,
+		"common/config/config.go.tmpl",
 		filepath.Join(outputDir, "common", "config", "config.go"),
 		data,
 	)
-	processTemplate(
-		filepath.Join(templateDir, "common", "config", "global.go.tmpl"),
+	processTemplate(tFS,
+		"common/config/global.go.tmpl",
 		filepath.Join(outputDir, "common", "config", "global.go"),
 		data,
 	)
-	processTemplate(
-		filepath.Join(templateDir, "common", "init", "init.go.tmpl"),
+	processTemplate(tFS,
+		"common/init/init.go.tmpl",
 		filepath.Join(outputDir, "common", "init", "init.go"),
 		data,
 	)
-	processTemplate(
-		filepath.Join(templateDir, "bff", "cmd", "main.go.tmpl"),
+	processTemplate(tFS,
+		"bff/cmd/main.go.tmpl",
 		filepath.Join(outputDir, data.BffDirName, "basic", "cmd", "main.go"),
 		data,
 	)
-	processTemplate(
-		filepath.Join(templateDir, "bff", "middlewares", "middlewares.go.tmpl"),
+	processTemplate(tFS,
+		"bff/middlewares/middlewares.go.tmpl",
 		filepath.Join(outputDir, data.BffDirName, "basic", "middlewares", "middlewares.go"),
 		data,
 	)
-	processTemplate(
-		filepath.Join(templateDir, "bff", "router", "router.go.tmpl"),
+	processTemplate(tFS,
+		"bff/router/router.go.tmpl",
 		filepath.Join(outputDir, data.BffDirName, "basic", "router", "router.go"),
 		data,
 	)
-	processTemplate(
-		filepath.Join(templateDir, "bff", "handler", "api", "upload.go.tmpl"),
+	processTemplate(tFS,
+		"bff/handler/api/upload.go.tmpl",
 		filepath.Join(outputDir, data.BffDirName, "handler", "api", "upload.go"),
 		data,
 	)
-	processTemplate(
-		filepath.Join(templateDir, "bff", "handler", "request", "upload.go.tmpl"),
+	processTemplate(tFS,
+		"bff/handler/request/upload.go.tmpl",
 		filepath.Join(outputDir, data.BffDirName, "handler", "request", "upload.go"),
 		data,
 	)
 	pkgFiles := []string{"jwt.go", "upload.go", "cart.go", "alipay.go", "sendsms.go", "ordersn.go"}
 	for _, f := range pkgFiles {
-		processTemplate(
-			filepath.Join(templateDir, "pkg", f+".tmpl"),
+		processTemplate(tFS,
+			path.Join("pkg", f+".tmpl"),
 			filepath.Join(outputDir, "pkg", f),
 			data,
 		)
 	}
 }
 
-func generateModuleFiles(data ModuleData, outputDir, templateDir string) {
+func generateModuleFiles(data ModuleData, outputDir string, tFS fs.FS) {
 	mod := data.Module
-	processTemplate(
-		filepath.Join(templateDir, "proto", "proto.tmpl"),
+	processTemplate(tFS,
+		"proto/proto.tmpl",
 		filepath.Join(outputDir, "proto", mod.LowerName, mod.LowerName+".proto"),
 		data,
 	)
-	processTemplate(
-		filepath.Join(templateDir, "common", "model", "model.go.tmpl"),
+	processTemplate(tFS,
+		"common/model/model.go.tmpl",
 		filepath.Join(outputDir, "common", "model", mod.LowerName+".go"),
 		data,
 	)
-	processTemplate(
-		filepath.Join(templateDir, "srv", "cmd", "main.go.tmpl"),
+	processTemplate(tFS,
+		"srv/cmd/main.go.tmpl",
 		filepath.Join(outputDir, mod.LowerName+"-server", "basic", "cmd", "main.go"),
 		data,
 	)
-	processTemplate(
-		filepath.Join(templateDir, "srv", "server", "server.go.tmpl"),
+	processTemplate(tFS,
+		"srv/server/server.go.tmpl",
 		filepath.Join(outputDir, mod.LowerName+"-server", "server", mod.LowerName+".go"),
 		data,
 	)
-	processTemplate(
-		filepath.Join(templateDir, "bff", "handler", "api", "handler.go.tmpl"),
+	processTemplate(tFS,
+		"bff/handler/api/handler.go.tmpl",
 		filepath.Join(outputDir, data.BffDirName, "handler", "api", mod.LowerName+".go"),
 		data,
 	)
-	processTemplate(
-		filepath.Join(templateDir, "bff", "handler", "request", "request.go.tmpl"),
+	processTemplate(tFS,
+		"bff/handler/request/request.go.tmpl",
 		filepath.Join(outputDir, data.BffDirName, "handler", "request", mod.LowerName+".go"),
 		data,
 	)
@@ -341,8 +360,8 @@ require (
 	}
 }
 
-func processTemplate(srcTmpl, dstFile string, data interface{}) {
-	tmplContent, err := os.ReadFile(srcTmpl)
+func processTemplate(tFS fs.FS, srcTmpl, dstFile string, data interface{}) {
+	tmplContent, err := fs.ReadFile(tFS, srcTmpl)
 	if err != nil {
 		log.Printf("跳过: 模板文件不存在 %s", srcTmpl)
 		return
@@ -352,7 +371,7 @@ func processTemplate(srcTmpl, dstFile string, data interface{}) {
 		"add": func(a, b int) int { return a + b },
 	}
 
-	tmpl, err := template.New(filepath.Base(srcTmpl)).Funcs(funcMap).Parse(string(tmplContent))
+	tmpl, err := template.New(path.Base(srcTmpl)).Funcs(funcMap).Parse(string(tmplContent))
 	if err != nil {
 		log.Printf("解析模板失败 %s: %v", srcTmpl, err)
 		return
