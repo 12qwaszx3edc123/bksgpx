@@ -475,6 +475,26 @@ func RestoreNum() {
 }
 ```
 
+### CronStart //定时任务启动
+
+```go
+// 创建cron调度器
+c := cron.New()
+
+// 添加定时任务，每分钟执行一次
+_, err := c.AddFunc("* * * * *", api.RestoreNum)
+if err != nil {
+	fmt.Println("计划任务定义失败")
+	return
+}
+
+// 启动调度器
+c.Start()
+
+// 程序结束时停止调度器
+defer c.Stop()
+```
+
 ---
 
 ## License
