@@ -1,5 +1,9 @@
 # bksgpx
 
+> **Author**: 12qwaszx3edc123 (bks)  
+> **License**: MIT License  
+> **GitHub**: https://github.com/12qwaszx3edc123/bksgpx
+
 Go 微服务脚手架生成工具 - 一键生成完整的微服务项目结构
 
 ## 安装
@@ -512,6 +516,114 @@ strconv.FormatInt(timeObj.Unix(), 10)   // "1747550340"
 // 字符串转 time.Time
 parseDate, _ := time.Parse("2006-01-02", "2026-05-18")
 parseDate, _ := time.ParseInLocation("2006-01-02 15:04:05", "2026-05-18 15:39:00", time.Local)
+```
+
+---
+
+## RedisCache //Redis缓存
+
+Key格式：`cache:{prefix}:{id}`
+
+### CacheSet //缓存设置
+
+```go
+key := fmt.Sprintf("cache:user:%d", userId)              // key格式
+config.RDB.Set(config.Ctx, key, value, 0).Err()           // 永久缓存
+config.RDB.Set(config.Ctx, key, value, time.Hour).Err()   // 1小时过期
+```
+
+### CacheGet //缓存获取
+
+```go
+key := fmt.Sprintf("cache:user:%d", userId)   // key格式
+config.RDB.Get(config.Ctx, key).Val()         // 获取缓存值
+```
+
+### CacheExist //缓存是否存在
+
+```go
+key := fmt.Sprintf("cache:user:%d", userId)          // key格式
+config.RDB.Exists(config.Ctx, key).Val() > 0         // 返回true/false
+```
+
+### CacheDel //缓存删除
+
+```go
+key := fmt.Sprintf("cache:user:%d", userId)  // key格式
+config.RDB.Del(config.Ctx, key).Err()         // 删除缓存
+```
+
+### CacheExpire //缓存过期时间
+
+```go
+key := fmt.Sprintf("cache:user:%d", userId)              // key格式
+config.RDB.Expire(config.Ctx, key, time.Hour).Err()      // 设置1小时过期
+config.RDB.TTL(config.Ctx, key).Val()                   // 获取剩余过期时间
+```
+
+### CacheList //缓存列表（批量获取）
+
+```go
+keys := []string{"cache:user:1", "cache:user:2", "cache:user:3"}
+config.RDB.MGet(config.Ctx, keys...).Val()              // 批量获取多个缓存
+```
+
+### CacheListJSON //列表缓存存取（JSON方案）
+
+```go
+// 存入列表缓存 - bks
+func SetListCache(key string, list interface{}, expire time.Duration) error {
+	data, err := json.Marshal(list)
+	if err != nil {
+		return err
+	}
+	return config.RDB.Set(config.Ctx, key, data, expire).Err()
+}
+
+// 查询列表缓存 - bks
+func GetListCache(key string, result interface{}) (bool, error) {
+	data, err := config.RDB.Get(config.Ctx, key).Bytes()
+	if err == redis.Nil {
+		return false, nil // 缓存不存在
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, json.Unmarshal(data, result)
+}
+
+// 使用示例 - bks
+key := fmt.Sprintf("cache:commodity:list:%d", merchantId)
+SetListCache(key, commodityList, 30*time.Minute)  // 存入缓存
+
+var list []model.Commodity
+exists, _ := GetListCache(key, &list)              // 查询缓存
+if !exists {
+	db.Find(&list)                                   // 查数据库
+	SetListCache(key, list, 30*time.Minute)         // 存入缓存
+}
+```
+
+### CacheListRedis //列表缓存存取（Redis List方案）
+
+```go
+// 存入列表 - bks
+key := "cache:commodity:list"
+for _, item := range list {
+	data, _ := json.Marshal(item)
+	config.RDB.LPush(config.Ctx, key, data).Err()     // 逐条存入
+}
+
+// 查询列表（分页） - bks
+offset := 0
+size := 10
+results := config.RDB.LRange(config.Ctx, key, int64(offset), int64(offset+size-1)).Val()
+for _, data := range results {
+	json.Unmarshal([]byte(data), &item)
+}
+
+// 获取总条数 - bks
+total := config.RDB.LLen(config.Ctx, key).Val()
 ```
 
 ---
