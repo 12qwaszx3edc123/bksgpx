@@ -455,4 +455,21 @@ c.Start()
 // 程序结束时停止调度器
 defer c.Stop()
 ```
+
+### TimeFormat //时间格式转换
+
+```go
+// time.Time 转字符串
+timeObj.Format("2006-01-02 15:04:05")  // "2026-05-18 15:39:00"
+timeObj.Format("2006-01-02")            // "2026-05-18"
+timeObj.Format("15:04:05")              // "15:39:00"
+timeObj.Format(time.RFC3339)            // "2026-05-18T15:39:00+08:00"
+
+// 时间戳转字符串
+strconv.FormatInt(timeObj.Unix(), 10)   // "1747550340"
+
+// 字符串转 time.Time
+parseDate, _ := time.Parse("2006-01-02", "2026-05-18")
+parseDate, _ := time.ParseInLocation("2006-01-02 15:04:05", "2026-05-18 15:39:00", time.Local)
+```
 ```
