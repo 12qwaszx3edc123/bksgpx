@@ -60,7 +60,7 @@ mygen --name myproject --modules user --template /path/to/templates
 
 ## ElasticSearch 操作
 
-### ES添加
+### ESAdd //ES添加
 
 ```go
 // 同步 Elastic添加
@@ -75,7 +75,7 @@ _, err = config.Esc.Index().
 	Do(context.Background())         // 执行
 ```
 
-### ES列表
+### ESList //ES列表
 
 ```go
 // 分页
@@ -118,7 +118,7 @@ for _, hit := range do.Hits.Hits {
 }
 ```
 
-### ES查询
+### ESGet //ES查询
 
 ```go
 // 根据ID查询单条文档
@@ -133,7 +133,7 @@ if do.Found {
 }
 ```
 
-### ES修改
+### ESUpdate //ES修改
 
 ```go
 // 根据ID更新文档字段
@@ -149,7 +149,7 @@ _, err = config.Esc.Update().
 	Do(context.Background())         // 执行
 ```
 
-### ES删除
+### ESDelete //ES删除
 
 ```go
 // 根据ID删除文档
@@ -159,27 +159,51 @@ _, err = config.Esc.Delete().
 	Do(context.Background())         // 执行
 ```
 
+### ESHighlight //ES高亮搜索
+
+```go
+// 设置高亮
+highlight := elastic.NewHighlight()
+highlight.Field("name")                          // 高亮哪个字段
+highlight.PreTags("<em>")                        // 前置标签
+highlight.PostTags("</em>")                      // 后置标签
+
+// 执行搜索
+do, err := config.Esc.Search().
+	Index("commodity").              // 索引名称
+	Query(boolQuery).                // 查询条件
+	Highlight(highlight).            // 添加高亮
+	Do(context.Background())         // 执行
+
+// 获取高亮结果
+for _, hit := range do.Hits.Hits {
+	if hit.Highlight != nil {
+		highlightedName := hit.Highlight["name"]  // ["<em>感冒</em>灵颗粒"]
+	}
+}
+```
+
 ---
 
-## Redis 购物车
+## Redis Cart //Redis购物车
 
 Key格式：`cart:{UserId}:{DrugId}`
 
-### 购物车添加/修改
+### CartAdd //购物车添加/修改
 
 ```go
 key := fmt.Sprintf("cart:%d:%d", UserId, DrugId)   // key格式
 config.RDB.HMSet(config.Ctx, key, drugMap).Err()   // 添加/修改商品
 ```
 
-### 购物车是否存在
+### CartExist //购物车是否存在
 
 ```go
 key := fmt.Sprintf("cart:%d:%d", UserId, DrugId)   // key格式
 config.RDB.Exists(config.Ctx, key).Val() > 0       // 返回true/false
 ```
 
-### 购物车数量更新
+### CartUpdate //购物车数量更新
 
 ```go
 key := fmt.Sprintf("cart:%d:%d", UserId, DrugId)          // key格式
@@ -187,21 +211,21 @@ config.RDB.HIncrBy(config.Ctx, key, "quantity", 1).Err()  // 数量+1
 config.RDB.HIncrBy(config.Ctx, key, "quantity", -1).Err() // 数量-1
 ```
 
-### 购物车列表
+### CartList //购物车列表
 
 ```go
 key := fmt.Sprintf("cart:%d:*", UserId)        // 匹配该用户所有商品key
 config.RDB.Keys(config.Ctx, key).Val()         // 返回 []string
 ```
 
-### 购物车删除单个
+### CartDelete //购物车删除单个
 
 ```go
 key := fmt.Sprintf("cart:%d:%d", UserId, DrugId)  // key格式
 config.RDB.Del(config.Ctx, key).Err()             // 删除商品
 ```
 
-### 购物车清空
+### CartClear //购物车清空
 
 ```go
 key := fmt.Sprintf("cart:%d:*", UserId)             // 匹配该用户所有商品key
@@ -213,7 +237,7 @@ for _, k := range keys {
 
 ---
 
-## 支付异步回调
+## PayNotify //支付异步回调
 
 ### Notify
 
@@ -274,7 +298,7 @@ func Notify(c *gin.Context) {
 
 ---
 
-## 排班管理
+## Schedule //排班管理
 
 ### ScheduleAdd
 
@@ -326,7 +350,7 @@ func (s *DoctorService) ScheduleAdd(ctx context.Context, req *pb.ScheduleAddRequ
 
 ---
 
-## 预约管理
+## Appointment //预约管理
 
 ### AppointmentAdd
 
@@ -427,7 +451,7 @@ func (s *UserService) AppointmentAdd(ctx context.Context, req *pb.AppointmentAdd
 }
 ```
 
-### RestoreNum（定时任务-号源恢复）
+### RestoreNum //定时任务-号源恢复
 
 ```go
 func RestoreNum() {
@@ -461,7 +485,6 @@ func RestoreNum() {
 		fmt.Println("号源释放成功")
 	}
 }
-```
 ```
 
 ---
